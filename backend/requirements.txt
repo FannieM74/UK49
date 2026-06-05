@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+crewai
+httpx
+beautifulsoup4
+lxml
+pydantic
+pydantic-settings
+python-dotenv
+playwright
