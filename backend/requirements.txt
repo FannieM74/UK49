@@ -1,6 +1,8 @@
 fastapi
 uvicorn
 crewai<0.80
+langchain-core<0.2
+langchain<0.2
 httpx
 beautifulsoup4
 lxml
