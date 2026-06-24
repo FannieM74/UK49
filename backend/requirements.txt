@@ -1,6 +1,5 @@
 fastapi
 uvicorn
-setuptools
 crewai<0.80
 httpx
 beautifulsoup4
