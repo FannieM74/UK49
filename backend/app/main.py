@@ -1,8 +1,8 @@
 import sys, os
-# Add both the backend directory (to import `app`) and the repository root (to import `backend`)
 backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-sys.path.extend([backend_dir, repo_root])
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db

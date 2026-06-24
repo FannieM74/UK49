@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.models import ScrapeResponse
-from backend.crew.tools.scraper_tool import UK49ScraperTool
+from crew.tools.scraper_tool import UK49ScraperTool
 from app.database import get_draws_count, clear_prediction_cache
 
 router = APIRouter(prefix="/api", tags=["scrape"])

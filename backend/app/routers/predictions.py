@@ -2,12 +2,7 @@ from fastapi import APIRouter, Query, HTTPException
 from app.models import PredictionResponse
 from app.database import get_cached_prediction, set_cached_prediction, get_draws_by_type_count
 # Import run_analysis lazily – avoid heavy dependencies at import time
-try:
-    from backend.crew.crew import run_analysis
-except Exception as e:
-    run_analysis = None
-    import logging
-    logging.getLogger(__name__).warning(f"run_analysis could not be imported: {e}")
+from crew.crew import run_analysis
 
 router = APIRouter(prefix="/api", tags=["predictions"])
 
@@ -32,10 +27,22 @@ def trigger_analysis(
                 detail=f"No historical draws are stored for '{draw_type}'. The current upstream data source only provides rows for the draw types already present in the database."
             )
 
-        result = run_analysis(draw_type)
+        # Run the crew analysis and handle potential errors
+        try:
+            result = run_analysis(draw_type)
+        except Exception as crew_err:
+            logging.getLogger(__name__).error(f"Crew analysis failed: {crew_err}")
+            raise HTTPException(status_code=500, detail="Crew analysis failed")
+        # The crew returns a JSON string; ensure we have a dict (robust handling)
+        import json
+        try:
+            if isinstance(result, (str, bytes)):
+                result = json.loads(result)
+        except Exception:
+            # If parsing fails, default to empty dict so .get is safe
+            result = {}
         # Build a proper PredictionResponse payload
         from datetime import datetime
-        import json
         prediction_payload = {
             "generated_at": datetime.utcnow().isoformat(),
             "draw_type": draw_type,
@@ -44,9 +51,13 @@ def trigger_analysis(
         }
         # Cache the JSON string of the payload
         set_cached_prediction(draw_type, json.dumps(prediction_payload))
+        import json
         return {
             "status": "complete",
-            "result": prediction_payload,
+            "generated_at": prediction_payload["generated_at"],
+            "draw_type": prediction_payload["draw_type"],
+            "tiers": prediction_payload["tiers"],
+            "analysis": prediction_payload["analysis"],
             "cached": False,
         }
     except Exception as e:

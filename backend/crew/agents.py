@@ -1,16 +1,30 @@
 from langchain.chat_models import ChatOpenAI
 from crewai import Agent
 from app.config import settings
+from crew.gemini_llm import GeminiChat
 
-llm = ChatOpenAI(
+groq_llm = ChatOpenAI(
     model=settings.groq_model.replace("groq/", ""),
     openai_api_key=settings.groq_api_key,
     openai_api_base="https://api.groq.com/openai/v1",
     temperature=0.7,
 )
 
-from backend.crew.tools.scraper_tool import UK49ScraperTool
-from backend.crew.tools.analysis_tool import FrequencyAnalysisTool
+gemini_llm = GeminiChat(
+    model="gemini-2.0-flash",
+    google_api_key=settings.gemini_api_key,
+    temperature=0.7,
+)
+
+def get_llm():
+    if settings.llm_provider == "gemini":
+        return gemini_llm
+    return groq_llm
+
+llm = get_llm()
+
+from crew.tools.scraper_tool import UK49ScraperTool
+from crew.tools.analysis_tool import FrequencyAnalysisTool
 from crew.tools.pattern_tool import PatternAnalysisTool
 from crew.tools.predictor_tool import PredictionTool
 
