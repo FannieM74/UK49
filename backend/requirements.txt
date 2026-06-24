@@ -1,6 +1,6 @@
 fastapi
 uvicorn
-crewai
+crewai<0.80
 httpx
 beautifulsoup4
 lxml
