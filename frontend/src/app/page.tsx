@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Draw, fetchDraws, triggerScrape } from "@/lib/api";
 import DrawTable from "@/components/DrawTable";
 import HotColdBalls from "@/components/HotColdBalls";
+import { DRAW_TYPES, getNextDrawType } from "@/lib/drawTypes";
 
 export default function Dashboard() {
   const [draws, setDraws] = useState<Draw[]>([]);
@@ -10,13 +11,16 @@ export default function Dashboard() {
   const [scraping, setScraping] = useState(false);
   const [scrapeMsg, setScrapeMsg] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
+  const initialDrawType = typeof window !== "undefined" ? getNextDrawType() : "lunchtime";
+  const [drawType, setDrawType] = useState(initialDrawType);
 
   useEffect(() => {
-    fetchDraws(50).then((d) => {
+    setLoading(true);
+    fetchDraws(50, drawType).then((d) => {
       setDraws(d);
       if (d.length > 0) setLastUpdated(d[0].draw_date);
     }).finally(() => setLoading(false));
-  }, []);
+  }, [drawType]);
 
   const mainNumbers = draws.flatMap(d => [d.n1, d.n2, d.n3, d.n4, d.n5, d.n6]);
   const freq = new Map<number, number>();
@@ -30,7 +34,7 @@ export default function Dashboard() {
     try {
       const res = await triggerScrape();
       setScrapeMsg(`Added ${res.draws_added} draws`);
-      const newDraws = await fetchDraws(50);
+      const newDraws = await fetchDraws(50, drawType);
       setDraws(newDraws);
       if (newDraws.length > 0) setLastUpdated(newDraws[0].draw_date);
     } catch {
@@ -72,7 +76,22 @@ export default function Dashboard() {
             </div>
           )}
 
-          <div className="glass-card rounded-2xl p-5 sm:p-7 animate-fade-in">
+          <div className="glass-card rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 animate-fade-in">
+            <select
+              value={drawType}
+              onChange={(e) => setDrawType(e.target.value)}
+              className="bg-gray-900 border border-gray-700/50 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-colors min-w-[140px]"
+            >
+              {DRAW_TYPES.map((dt) => (
+                <option key={dt.value} value={dt.value}>{dt.label}</option>
+              ))}
+            </select>
+            <span className="ml-3 text-[11px] sm:text-xs text-gray-400">
+              {draws.length > 0 ? `Showing last ${draws.length} draws` : "No draws found"}
+            </span>
+          </div>
+
+          <div className="glass-card rounded-2xl p-5 sm:p-7 animate-fade-in" style={{ animationDelay: "0.05s" }}>
             <h2 className="text-base sm:text-xl font-semibold mb-4 sm:mb-5 flex items-center gap-2">
               <span className="w-1.5 h-5 bg-red-400 rounded-full" />
               Hot & Cold Numbers
