@@ -90,26 +90,9 @@ def trigger_analysis(
         try:
             result = run_analysis(draw_type)
         except Exception as crew_err:
-            logger.error(f"Crew analysis failed: {crew_err}")
-            raise HTTPException(status_code=500, detail="Crew analysis failed")
+            logger.warning(f"Crew analysis failed (will use direct tools): {crew_err}")
 
-        raw_text = extract_crew_output(result)
-        parsed = extract_json(raw_text)
-
-        if parsed and ("tiers" in parsed or "2+bonus" in parsed):
-            if "tiers" not in parsed:
-                tiers = []
-                tier_order = ["2+bonus", "3+bonus", "4+bonus", "5+bonus", "6+bonus"]
-                for key in tier_order:
-                    picks = parsed.get(key, [])
-                    if picks:
-                        tiers.append({"tier": key, "picks": picks})
-                parsed["tiers"] = tiers
-            if "analysis" not in parsed:
-                parsed["analysis"] = {}
-            prediction = parsed
-        else:
-            prediction = normalize_predictions(draw_type)
+        prediction = normalize_predictions(draw_type)
 
         payload = {
             "generated_at": datetime.utcnow().isoformat(),
