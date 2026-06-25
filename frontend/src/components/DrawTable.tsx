@@ -9,15 +9,11 @@ interface Props {
 const TYPE_BADGES: Record<string, string> = {
   lunchtime: "badge badge-lunchtime",
   teatime: "badge badge-teatime",
-  brunchtime: "badge badge-brunchtime",
-  drivetime: "badge badge-drivetime",
 };
 
 const TYPE_LABELS: Record<string, string> = {
   lunchtime: "L",
   teatime: "T",
-  brunchtime: "B",
-  drivetime: "D",
 };
 
 export default function DrawTable({ draws }: Props) {

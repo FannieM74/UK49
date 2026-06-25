@@ -43,7 +43,7 @@ def normalize_predictions(draw_type: str) -> dict:
 
 @router.get("/debug")
 def debug_prediction(
-    draw_type: str = Query("lunchtime", pattern="^(brunchtime|lunchtime|drivetime|teatime)$")
+    draw_type: str = Query("lunchtime", pattern="^(lunchtime|teatime)$")
 ):
     from crew.tools.predictor_tool import PredictionTool
     from crew.tools.analysis_tool import FrequencyAnalysisTool
@@ -64,7 +64,7 @@ def debug_prediction(
 @router.post("/analyze", response_model=PredictionResponse)
 def trigger_analysis(
     draw_type: str = Query(
-        "lunchtime", pattern="^(brunchtime|lunchtime|drivetime|teatime)$"
+        "lunchtime", pattern="^(lunchtime|teatime)$"
     )
 ):
     try:
