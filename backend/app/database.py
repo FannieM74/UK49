@@ -32,7 +32,7 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_draws_type ON draws(draw_type);
 
         CREATE TABLE IF NOT EXISTS prediction_cache (
-            draw_type TEXT PRIMARY KEY,
+            cache_key TEXT PRIMARY KEY,
             result_json TEXT NOT NULL,
             created_at TEXT NOT NULL
         );
@@ -84,11 +84,11 @@ def get_draws_by_type_count(draw_type):
     conn.close()
     return row["count"]
 
-def get_cached_prediction(draw_type: str, max_age_days: int = 3):
+def get_cached_prediction(cache_key: str, max_age_days: int = 3):
     conn = get_connection()
     row = conn.execute(
-        "SELECT * FROM prediction_cache WHERE draw_type = ?",
-        (draw_type,)
+        "SELECT * FROM prediction_cache WHERE cache_key = ?",
+        (cache_key,)
     ).fetchone()
     conn.close()
     if not row:
@@ -98,12 +98,12 @@ def get_cached_prediction(draw_type: str, max_age_days: int = 3):
         return None
     return row["result_json"]
 
-def set_cached_prediction(draw_type: str, result_json: str):
+def set_cached_prediction(cache_key: str, result_json: str):
     conn = get_connection()
     conn.execute(
-        """INSERT OR REPLACE INTO prediction_cache (draw_type, result_json, created_at)
+        """INSERT OR REPLACE INTO prediction_cache (cache_key, result_json, created_at)
            VALUES (?, ?, ?)""",
-        (draw_type, result_json, datetime.now().isoformat())
+        (cache_key, result_json, datetime.now().isoformat())
     )
     conn.commit()
     conn.close()

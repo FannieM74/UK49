@@ -5,6 +5,16 @@ import PredictionCard from "@/components/PredictionCard";
 import DrawTable from "@/components/DrawTable";
 import { DRAW_TYPES, getNextDrawType } from "@/lib/drawTypes";
 
+const PREDICTION_METHODS = [
+  { value: "frequency", label: "Frequency" },
+  { value: "weighted_recent", label: "Weighted Recent" },
+  { value: "delta", label: "Delta Analysis" },
+  { value: "pair", label: "Pair Frequency" },
+  { value: "cold_recovery", label: "Cold Recovery" },
+  { value: "sum_targeting", label: "Sum Targeting" },
+  { value: "ensemble", label: "Ensemble" },
+] as const;
+
 export default function PredictionsPage() {
   const [drawsList, setDrawsList] = useState<Draw[]>([]);
   const [selectedDraw, setSelectedDraw] = useState<Draw | null>(null);
@@ -13,6 +23,7 @@ export default function PredictionsPage() {
   const [error, setError] = useState("");
   const initialDrawType = useMemo(() => getNextDrawType(), []);
   const [drawType, setDrawType] = useState(initialDrawType);
+  const [method, setMethod] = useState("frequency");
   // Load recent draws for the chosen draw type
   useEffect(() => {
     const load = async () => {
@@ -34,7 +45,7 @@ export default function PredictionsPage() {
     setError("");
     setCached(false);
     try {
-      const result = await runAnalysis(drawType);
+      const result = await runAnalysis(drawType, method);
       setTiers(result.tiers);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Analysis failed. Check backend & GROQ_API_KEY.");
@@ -57,6 +68,15 @@ export default function PredictionsPage() {
 >
                 {DRAW_TYPES.map((dt) => (
                   <option key={dt.value} value={dt.value}>{dt.label}</option>
+                ))}
+              </select>
+              <select
+                value={method}
+                onChange={(e) => setMethod(e.target.value)}
+                className="bg-gray-900 border border-gray-700/50 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-gray-200 focus:outline-none focus:border-yellow-500/50 transition-colors flex-1 sm:flex-none min-w-[140px]"
+              >
+                {PREDICTION_METHODS.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
                 ))}
               </select>
               <span className="text-[11px] sm:text-xs text-gray-400">Defaulted to the next draw in your local time.</span>

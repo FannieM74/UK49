@@ -13,12 +13,16 @@ router = APIRouter(prefix="/api", tags=["predictions"])
 CACHE_MAX_DAYS = 3
 
 
-def normalize_predictions(draw_type: str) -> dict:
+def cache_key(draw_type: str, method: str) -> str:
+    return f"{draw_type}:{method}"
+
+
+def normalize_predictions(draw_type: str, method: str = "frequency") -> dict:
     pred_tool = PredictionTool()
     analysis_tool = FrequencyAnalysisTool()
     pattern_tool = PatternAnalysisTool()
 
-    raw_predictions = json.loads(pred_tool._run(input_str=draw_type))
+    raw_predictions = json.loads(pred_tool._run(input_str=f'{{"draw_type":"{draw_type}","method":"{method}"}}'))
     raw_analysis = analysis_tool._run(input_str=draw_type)
     raw_patterns = pattern_tool._run(input_str=draw_type)
 
@@ -43,13 +47,14 @@ def normalize_predictions(draw_type: str) -> dict:
 
 @router.get("/debug")
 def debug_prediction(
-    draw_type: str = Query("lunchtime", pattern="^(lunchtime|teatime)$")
+    draw_type: str = Query("lunchtime", pattern="^(lunchtime|teatime)$"),
+    method: str = Query("frequency")
 ):
     from crew.tools.predictor_tool import PredictionTool
     from crew.tools.analysis_tool import FrequencyAnalysisTool
     from crew.tools.pattern_tool import PatternAnalysisTool
     try:
-        pred_result = PredictionTool()._run(input_str=draw_type)
+        pred_result = PredictionTool()._run(input_str=f'{{"draw_type":"{draw_type}","method":"{method}"}}')
         freq_result = FrequencyAnalysisTool()._run(input_str=draw_type)
         pat_result = PatternAnalysisTool()._run(input_str=draw_type)
         return {
@@ -65,10 +70,14 @@ def debug_prediction(
 def trigger_analysis(
     draw_type: str = Query(
         "lunchtime", pattern="^(lunchtime|teatime)$"
+    ),
+    method: str = Query(
+        "frequency", pattern="^(frequency|weighted_recent|delta|pair|cold_recovery|sum_targeting|ensemble)$"
     )
 ):
     try:
-        cached = get_cached_prediction(draw_type, CACHE_MAX_DAYS)
+        ck = cache_key(draw_type, method)
+        cached = get_cached_prediction(ck, CACHE_MAX_DAYS)
         if cached:
             return json.loads(cached)
 
@@ -78,7 +87,7 @@ def trigger_analysis(
                 detail=f"No historical draws are stored for '{draw_type}'."
             )
 
-        prediction = normalize_predictions(draw_type)
+        prediction = normalize_predictions(draw_type, method)
 
         payload = {
             "generated_at": datetime.utcnow().isoformat(),
@@ -87,7 +96,7 @@ def trigger_analysis(
             "analysis": prediction.get("analysis", {}),
         }
 
-        set_cached_prediction(draw_type, json.dumps(payload))
+        set_cached_prediction(ck, json.dumps(payload))
         return payload
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

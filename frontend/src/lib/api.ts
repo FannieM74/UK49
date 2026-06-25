@@ -47,8 +47,8 @@ export interface AnalysisResponse {
   analysis: Record<string, unknown>;
 }
 
-export async function runAnalysis(drawType = getNextDrawType()): Promise<AnalysisResponse> {
-  const res = await fetch(`${API_BASE}/api/analyze?draw_type=${drawType}`, { method: "POST" });
+export async function runAnalysis(drawType = getNextDrawType(), method = "frequency"): Promise<AnalysisResponse> {
+  const res = await fetch(`${API_BASE}/api/analyze?draw_type=${drawType}&method=${method}`, { method: "POST" });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(typeof data.detail === "string" ? data.detail : `Failed to analyze: ${res.status}`);
