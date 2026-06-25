@@ -1,11 +1,9 @@
 import json
-import re
 import logging
 from datetime import datetime
 from fastapi import APIRouter, Query, HTTPException
 from app.models import PredictionResponse
 from app.database import get_cached_prediction, set_cached_prediction, get_draws_by_type_count
-from crew.crew import run_analysis
 from crew.tools.predictor_tool import PredictionTool
 from crew.tools.analysis_tool import FrequencyAnalysisTool
 from crew.tools.pattern_tool import PatternAnalysisTool
@@ -13,28 +11,6 @@ from crew.tools.pattern_tool import PatternAnalysisTool
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["predictions"])
 CACHE_MAX_DAYS = 3
-
-
-def extract_json(text: str) -> dict | None:
-    text = text.strip()
-    if text.startswith("{"):
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError:
-            pass
-    m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
-    if m:
-        try:
-            return json.loads(m.group(1))
-        except json.JSONDecodeError:
-            pass
-    m = re.search(r"\{.*\}", text, re.DOTALL)
-    if m:
-        try:
-            return json.loads(m.group(0))
-        except json.JSONDecodeError:
-            pass
-    return None
 
 
 def normalize_predictions(draw_type: str) -> dict:
@@ -48,9 +24,12 @@ def normalize_predictions(draw_type: str) -> dict:
 
     parsed_analysis = {}
     for src in [raw_analysis, raw_patterns]:
-        d = extract_json(str(src))
-        if d:
-            parsed_analysis.update(d)
+        try:
+            d = json.loads(str(src))
+            if d:
+                parsed_analysis.update(d)
+        except json.JSONDecodeError:
+            pass
 
     tiers = []
     tier_order = ["2+bonus", "3+bonus", "4+bonus", "5+bonus", "6+bonus"]
@@ -60,14 +39,6 @@ def normalize_predictions(draw_type: str) -> dict:
             tiers.append({"tier": key, "picks": picks})
 
     return {"tiers": tiers, "analysis": parsed_analysis}
-
-
-def extract_crew_output(result) -> str:
-    if hasattr(result, "raw"):
-        return result.raw
-    if isinstance(result, (str, bytes)):
-        return result if isinstance(result, str) else result.decode()
-    return str(result)
 
 
 @router.get("/debug")
@@ -106,11 +77,6 @@ def trigger_analysis(
                 status_code=400,
                 detail=f"No historical draws are stored for '{draw_type}'."
             )
-
-        try:
-            result = run_analysis(draw_type)
-        except Exception as crew_err:
-            logger.warning(f"Crew analysis failed (will use direct tools): {crew_err}")
 
         prediction = normalize_predictions(draw_type)
 
