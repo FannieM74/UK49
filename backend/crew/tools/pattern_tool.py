@@ -2,6 +2,7 @@ from langchain.tools import BaseTool
 from collections import Counter
 from app.database import get_connection
 import re
+import json
 
 
 class PatternAnalysisTool(BaseTool):
@@ -48,7 +49,7 @@ class PatternAnalysisTool(BaseTool):
             "overdue_numbers": overdue,
         }
 
-        return str(result)
+        return json.dumps(result)
 
     def _extract_draw_type(self, text: str) -> str | None:
         for dt in ["brunchtime", "lunchtime", "drivetime", "teatime"]:

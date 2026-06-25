@@ -2,6 +2,7 @@ from langchain.tools import BaseTool
 from collections import Counter
 from app.database import get_connection
 import re
+import json
 
 
 class FrequencyAnalysisTool(BaseTool):
@@ -50,7 +51,7 @@ class FrequencyAnalysisTool(BaseTool):
             "sum_range": {"min": min(sums), "max": max(sums), "avg": round(sum(sums)/len(sums), 1)}
         }
 
-        return str(result)
+        return json.dumps(result)
 
     def _extract_draw_type(self, text: str) -> str | None:
         for dt in ["brunchtime", "lunchtime", "drivetime", "teatime"]:
