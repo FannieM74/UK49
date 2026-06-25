@@ -6,7 +6,7 @@ if backend_dir not in sys.path:
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db
-from app.routers import draws, scrape, predictions
+from app.routers import draws, scrape, predictions, evaluate
 
 app = FastAPI(title="UK49 Predictor API")
 
@@ -24,6 +24,7 @@ def startup():
 app.include_router(draws.router)
 app.include_router(scrape.router)
 app.include_router(predictions.router)
+app.include_router(evaluate.router)
 
 @app.get("/api/health")
 def health():

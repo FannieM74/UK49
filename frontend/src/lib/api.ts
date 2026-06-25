@@ -55,3 +55,27 @@ export async function runAnalysis(drawType = getNextDrawType(), method = "freque
   }
   return res.json();
 }
+
+export interface EvaluateResult {
+  draw_type: string;
+  test_count: number;
+  ranking: string[];
+  methods: Record<string, {
+    avg_main_hits: number;
+    bonus_hit_rate: number;
+    any_match_rate: number;
+    tests: number;
+    tiers: Record<string, {
+      avg_main_hits: number;
+      bonus_hit_rate: number;
+      any_match_rate: number;
+      tests: number;
+    }>;
+  }>;
+}
+
+export async function evaluateMethods(drawType = "lunchtime"): Promise<EvaluateResult> {
+  const res = await fetch(`${API_BASE}/api/evaluate?draw_type=${drawType}`);
+  if (!res.ok) throw new Error(`Failed to evaluate: ${res.status}`);
+  return res.json();
+}
