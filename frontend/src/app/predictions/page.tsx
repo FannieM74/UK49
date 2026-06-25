@@ -35,13 +35,7 @@ export default function PredictionsPage() {
     setCached(false);
     try {
       const result = await runAnalysis(drawType);
-      const parsed = JSON.parse(result.result);
-      const tierList = Object.entries(parsed).map(([key, val]) => ({
-        tier: key,
-        picks: val as { numbers: number[]; bonus: number; probability: number }[],
-      }));
-      setTiers(tierList);
-      setCached(result.cached || false);
+      setTiers(result.tiers);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Analysis failed. Check backend & GROQ_API_KEY.");
     }

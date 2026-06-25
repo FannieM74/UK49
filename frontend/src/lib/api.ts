@@ -40,7 +40,14 @@ export async function triggerScrape(): Promise<{ message: string; draws_added: n
   return res.json();
 }
 
-export async function runAnalysis(drawType = getNextDrawType()): Promise<{ status: string; result: string; cached?: boolean }> {
+export interface AnalysisResponse {
+  generated_at: string;
+  draw_type: string;
+  tiers: PredictionTier[];
+  analysis: Record<string, unknown>;
+}
+
+export async function runAnalysis(drawType = getNextDrawType()): Promise<AnalysisResponse> {
   const res = await fetch(`${API_BASE}/api/analyze?draw_type=${drawType}`, { method: "POST" });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
