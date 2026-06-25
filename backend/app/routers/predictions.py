@@ -70,6 +70,26 @@ def extract_crew_output(result) -> str:
     return str(result)
 
 
+@router.get("/debug")
+def debug_prediction(
+    draw_type: str = Query("lunchtime", pattern="^(brunchtime|lunchtime|drivetime|teatime)$")
+):
+    from crew.tools.predictor_tool import PredictionTool
+    from crew.tools.analysis_tool import FrequencyAnalysisTool
+    from crew.tools.pattern_tool import PatternAnalysisTool
+    try:
+        pred_result = PredictionTool()._run(input_str=draw_type)
+        freq_result = FrequencyAnalysisTool()._run(input_str=draw_type)
+        pat_result = PatternAnalysisTool()._run(input_str=draw_type)
+        return {
+            "prediction_raw": pred_result[:2000],
+            "frequency_raw": freq_result[:2000],
+            "pattern_raw": pat_result[:2000],
+        }
+    except Exception as e:
+        return {"error": str(e), "type": type(e).__name__}
+
+
 @router.post("/analyze", response_model=PredictionResponse)
 def trigger_analysis(
     draw_type: str = Query(
